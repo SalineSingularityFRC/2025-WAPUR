@@ -17,6 +17,25 @@ public class Constants {
     REAL, SIM, REPLAY
   }
 
+  public static class CANID {
+    public static class ShooterSubsystem{
+      public static final int MOTOR1 = 5;
+      public static final int MOTOR2 = 6;
+    }
+  }
+
+  public static class PID{
+    public static class Shooter{
+      public static final ConfigDouble kP = new ConfigDouble("Shooter/kP", 1);
+      public static final ConfigDouble kI = new ConfigDouble("Shooter/kI", 0);
+      public static final ConfigDouble kD = new ConfigDouble("Shooter/kD", 0);
+    }
+    public static class Drive {
+      public static ConfigDouble HEADING_CORRECTION_KP = new ConfigDouble("Drive/PID/Heading Correction kP", 1);
+      public static ConfigDouble HEADING_CORRECTION_KI = new ConfigDouble("Drive/PID/Heading Correction kI", 0);
+      public static ConfigDouble HEADING_CORRECTION_KD = new ConfigDouble("Drive/PID/Heading Correction kD", 0);
+    }
+  }
   public abstract static class Config<T> {
     public final String name;
     public final T defaultValue;
@@ -75,11 +94,5 @@ public class Constants {
     public Boolean getValue() {
       return Preferences.getBoolean(name, defaultValue);
     }
-  }
-
-  public static class Drive {
-    public static ConfigDouble HEADING_CORRECTION_KP = new ConfigDouble("Drive/PID/Heading Correction kP", 1);
-    public static ConfigDouble HEADING_CORRECTION_KI = new ConfigDouble("Drive/PID/Heading Correction kI", 0);
-    public static ConfigDouble HEADING_CORRECTION_KD = new ConfigDouble("Drive/PID/Heading Correction kD", 0);
   }
 }
