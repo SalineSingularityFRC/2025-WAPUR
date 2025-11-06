@@ -7,8 +7,11 @@ package frc.robot;
 import static edu.wpi.first.units.Units.*;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.configs.GyroTrimConfigs;
+import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -22,8 +25,10 @@ import frc.robot.subsystems.TestShooterSubsytem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
-    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+    private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
+                                                                                      // max angular velocity
     private TestShooterSubsytem shooterSubsystem = new TestShooterSubsytem();
+    private Pigeon2 gyro = new Pigeon2(20);
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -38,10 +43,22 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
+    private double rotationRate = -joystick.getRightX() * MaxAngularRate;
+    private PIDController rotationController = new PIDController(Constants.PID.Drive.HEADING_CORRECTION_KP.getValue(), Constants.PID.Drive.HEADING_CORRECTION_KI.getValue(), Constants.PID.Drive.HEADING_CORRECTION_KD.getValue());
+
     public RobotContainer() {
         configureBindings();
+        updateRotation();
     }
 
+    public void updateRotation(){
+        if(-joystick.getRightX() < 0.1 * MaxAngularRate){
+            rotationController.setSetpoint(gyro.getYaw().getValueAsDouble());
+        }
+        else{
+            rotationRate = rotationController.calculate(gyro.getYaw().getValueAsDouble());
+        }
+    }
     private void configureBindings() {
         // Note that X is defined as forward according to WPILib convention,
         // and Y is defined as to the left according to WPILib convention.
@@ -50,7 +67,7 @@ public class RobotContainer {
             drivetrain.applyRequest(() ->
                 drive.withVelocityX(-joystick.getLeftY() * MaxSpeed) // Drive forward with negative Y (forward)
                     .withVelocityY(-joystick.getLeftX() * MaxSpeed) // Drive left with negative X (left)
-                    .withRotationalRate(-joystick.getRightX() * MaxAngularRate) // Drive counterclockwise with negative X (left)
+                    .withRotationalRate(rotationRate) // Drive counterclockwise with negative X (left)
             )
         );
 
@@ -58,12 +75,12 @@ public class RobotContainer {
         // neutral mode is applied to the drive motors while disabled.
         final var idle = new SwerveRequest.Idle();
         RobotModeTriggers.disabled().whileTrue(
-            drivetrain.applyRequest(() -> idle).ignoringDisable(true)
-        );
+                drivetrain.applyRequest(() -> idle).ignoringDisable(true));
 
         // joystick.a().whileTrue(drivetrain.applyRequest(() -> brake));
         // joystick.b().whileTrue(drivetrain.applyRequest(() ->
-        //     point.withModuleDirection(new Rotation2d(-joystick.getLeftY(), -joystick.getLeftX()))
+        // point.withModuleDirection(new Rotation2d(-joystick.getLeftY(),
+        // -joystick.getLeftX()))
         // ));
         joystick.a().whileTrue(shooterSubsystem.RunMotors(100));
 
