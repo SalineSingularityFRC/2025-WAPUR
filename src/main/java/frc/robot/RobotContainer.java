@@ -13,6 +13,7 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -43,20 +44,24 @@ public class RobotContainer {
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
 
-    private double rotationRate = -joystick.getRightX() * MaxAngularRate;
+    private double rotationRate = -joystick.getRawAxis(1) * MaxAngularRate;
     private PIDController rotationController = new PIDController(Constants.PID.Drive.HEADING_CORRECTION_KP.getValue(), Constants.PID.Drive.HEADING_CORRECTION_KI.getValue(), Constants.PID.Drive.HEADING_CORRECTION_KD.getValue());
 
     public RobotContainer() {
         configureBindings();
-        updateRotation();
     }
 
     public void updateRotation(){
-        if(-joystick.getRightX() < 0.1 * MaxAngularRate){
-            rotationController.setSetpoint(gyro.getYaw().getValueAsDouble());
+        boolean withinDeadband = Math.abs(joystick.getRightX()) < 0.2;
+        SmartDashboard.putBoolean("WithinDeadband", withinDeadband);
+        SmartDashboard.putNumber("RightX", joystick.getRightX());
+        if(withinDeadband){
+            rotationRate = rotationController.calculate(gyro.getYaw().getValueAsDouble());
         }
         else{
-            rotationRate = rotationController.calculate(gyro.getYaw().getValueAsDouble());
+            rotationRate = joystick.getRightX();
+            rotationController.setSetpoint(gyro.getYaw().getValueAsDouble());
+            rotationController.reset();
         }
     }
     private void configureBindings() {
