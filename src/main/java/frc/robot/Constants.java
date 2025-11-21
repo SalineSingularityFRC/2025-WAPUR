@@ -31,9 +31,12 @@ public class Constants {
       public static final ConfigDouble kD = new ConfigDouble("Shooter/kD", 0);
     }
     public static class Drive {
-      public static ConfigDouble HEADING_CORRECTION_KP = new ConfigDouble("Drive/PID/Heading Correction kP", 1);
-      public static ConfigDouble HEADING_CORRECTION_KI = new ConfigDouble("Drive/PID/Heading Correction kI", 0);
-      public static ConfigDouble HEADING_CORRECTION_KD = new ConfigDouble("Drive/PID/Heading Correction kD", 0);
+      public static double HEADING_CORRECTION_KP = 0.02;
+      public static double HEADING_CORRECTION_KI = 0;
+      public static double HEADING_CORRECTION_KD = 0.0035;
+      public static double HEADING_CORRECTION_KS = 0.047;
+      public static double HEADING_CORRECTION_KV = 0;
+      public static double HEADING_CORRECTION_TOLERANCE = 0.05;
     }
   }
   public abstract static class Config<T> {

@@ -33,7 +33,7 @@ public class TestShooterSubsytem extends SubsystemBase{
         motor2.getConfigurator().apply(motor2Config);
     }
 
-    public Command RunMotors(double speed){
+    public Command runMotors(double speed){
         return runEnd(() -> {
             motor1.set(speed);
             motor2.set(-speed);
