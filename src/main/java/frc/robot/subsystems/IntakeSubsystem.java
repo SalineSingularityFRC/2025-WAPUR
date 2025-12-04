@@ -33,10 +33,24 @@ public class IntakeSubsystem extends SubsystemBase{
         motor2.getConfigurator().apply(motor2Config);
     }
 
-    public Command RunMotors(double speed){
+    public Command runIntake(double speed){
+        return RunMotors(speed, false);
+    }
+
+    public Command runOuttake(double speed){
+        return RunMotors(speed, true);
+    }
+
+    public Command RunMotors(double speed, boolean inverted){
         return runEnd(() -> {
-            motor1.set(speed);
-            motor2.set(-speed);
+            if(!inverted){
+                motor1.set(speed);
+                motor2.set(-speed);
+            }
+            else{
+                motor1.set(-speed);
+                motor2.set(speed);
+            }
         },
         () -> {
             motor1.set(0);

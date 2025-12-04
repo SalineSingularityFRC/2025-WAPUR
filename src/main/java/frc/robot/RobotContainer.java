@@ -24,6 +24,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.Setpoint;
 import frc.robot.subsystems.ElevatorSubsystem;
 
 public class RobotContainer {
@@ -32,7 +33,7 @@ public class RobotContainer {
                                                                                       // max angular velocity
     private IntakeSubsystem Intake = new IntakeSubsystem();
     private ElevatorSubsystem Elevator = new ElevatorSubsystem();
-    private Pigeon2 gyro = new Pigeon2(20);
+    private Pigeon2 gyro = new Pigeon2(20, "drivetrain");
 
     /* Setting up bindings for necessary control of the swerve drive platform */
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
@@ -100,6 +101,16 @@ public class RobotContainer {
 
         // reset the field-centric heading on left bumper press
         joystick.leftBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+
+        //Elevator Controls
+        joystick.povUp().onTrue(Elevator.targetPosition(Setpoint.kFeederStation));
+        joystick.povRight().onTrue(Elevator.targetPosition(Setpoint.kLevel2));
+        joystick.povDown().onTrue(Elevator.targetPosition(Setpoint.kLevel3));
+        joystick.povLeft().onTrue(Elevator.targetPosition(Setpoint.kLevel4));
+
+        //Intake Controls
+        joystick.leftTrigger().whileTrue(Intake.runIntake(Constants.Intake.INTAKE_SPEED.getValue()));
+        joystick.rightTrigger().whileTrue(Intake.runOuttake(Constants.Intake.OUTTAKE_SPEED.getValue()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

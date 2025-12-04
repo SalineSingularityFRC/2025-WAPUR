@@ -38,6 +38,11 @@ public class Constants {
     }
   }
 
+  public static class Intake{
+    public static ConfigDouble INTAKE_SPEED = new ConfigDouble("Intake/INTAKE_SPEED", .2);
+    public static ConfigDouble OUTTAKE_SPEED = new ConfigDouble("Intake/OUTTAKE_SPEED", .2);
+  }
+
   public static class Elevator {
     public static ConfigInt FOLLOW_DUALENABLE = new ConfigInt("Elevator/DUALENABLE", 0);
 
@@ -75,7 +80,7 @@ public class Constants {
       public static ConfigDouble L4_COUNTS_ADDITIONAL_RAISE = new ConfigDouble(
           "Elevator/Positions/L4 additional raise in counts", 1);
     }
-
+          
     public static class PrimaryMotor {
       public static ConfigDouble RAISE_SPEED = new ConfigDouble("Elevator/Primary Motor/RAISE_SPEED", 0.3);
       public static ConfigDouble L4_RAISE_SPEED = new ConfigDouble("Elevator/Primary Motor/L4_RAISE_SPEED", 0.1);
