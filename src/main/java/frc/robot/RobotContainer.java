@@ -30,11 +30,11 @@ import frc.robot.subsystems.ElevatorSubsystem.Setpoint;
 import frc.robot.subsystems.ElevatorSubsystem;
 
 public class RobotContainer {
-    private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double MaxSpeed = 1.52; // TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
                                                                                       // max angular velocity
-    private IntakeSubsystem Intake = new IntakeSubsystem();
-    private ElevatorSubsystem Elevator = new ElevatorSubsystem();
+    private IntakeSubsystem intake = new IntakeSubsystem();
+    private ElevatorSubsystem elevator = new ElevatorSubsystem();
     private Pigeon2 gyro = new Pigeon2(20, "drivetrain");
 
     /* Setting up bindings for necessary control of the swerve drive platform */
@@ -138,14 +138,16 @@ public class RobotContainer {
         joystick.rightBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
         //Elevator Controls
-        joystick.povUp().onTrue(Elevator.targetPosition(Setpoint.kFeederStation));
-        joystick.povRight().onTrue(Elevator.targetPosition(Setpoint.kLevel2));
-        joystick.povDown().onTrue(Elevator.targetPosition(Setpoint.kLevel3));
-        joystick.povLeft().onTrue(Elevator.targetPosition(Setpoint.kLevel4));
+        joystick.a().onTrue(elevator.moveToTargetPosition(Setpoint.kFeederStation));
+        joystick.b().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel2));
+        joystick.x().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel3));
+        joystick.y().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel4));
+        joystick.povUp().whileTrue(elevator.runMotors(false));
+        joystick.povDown().whileTrue(elevator.runMotors(true));
 
         //Intake Controls
-        joystick.leftTrigger().whileTrue(Intake.runIntake(Constants.Intake.INTAKE_SPEED.getValue()));
-        joystick.rightTrigger().whileTrue(Intake.runOuttake(Constants.Intake.OUTTAKE_SPEED.getValue()));
+        joystick.leftTrigger().whileTrue(intake.runIntake(Constants.Intake.INTAKE_SPEED.getValue()));
+        joystick.rightTrigger().whileTrue(intake.runOuttake(Constants.Intake.OUTTAKE_SPEED.getValue()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }

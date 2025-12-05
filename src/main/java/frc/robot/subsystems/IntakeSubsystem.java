@@ -5,15 +5,20 @@ import com.ctre.phoenix6.configs.TalonFXConfiguration;
 import com.ctre.phoenix6.configs.TalonFXConfigurator;
 import com.ctre.phoenix6.hardware.TalonFX;
 
+import au.grapplerobotics.LaserCan;
+import au.grapplerobotics.interfaces.LaserCanInterface.Measurement;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class IntakeSubsystem extends SubsystemBase{
-    public TalonFX motor1 = new TalonFX(Constants.CANID.IntakeSubsystem.LINTAKEMOTOR);
-    public TalonFX motor2 = new TalonFX(Constants.CANID.IntakeSubsystem.RINTAKEMOTOR);
-    public TalonFXConfiguration motor1Config;
-    public TalonFXConfiguration motor2Config;
+    private TalonFX motor1 = new TalonFX(Constants.CANID.IntakeSubsystem.LINTAKEMOTOR);
+    private TalonFX motor2 = new TalonFX(Constants.CANID.IntakeSubsystem.RINTAKEMOTOR);
+    private TalonFXConfiguration motor1Config;
+    private TalonFXConfiguration motor2Config;
+
+    private LaserCan sensor;
 
     public IntakeSubsystem() {
         motor1Config = new TalonFXConfiguration();
@@ -31,17 +36,20 @@ public class IntakeSubsystem extends SubsystemBase{
 
         motor1.getConfigurator().apply(motor1Config);
         motor2.getConfigurator().apply(motor2Config);
+
+        sensor = new LaserCan(34);
     }
 
     public Command runIntake(double speed){
-        return RunMotors(speed, false);
+        SmartDashboard.putNumber("IntakeSensor", getSensorValue());
+        return runMotors(speed, false).until(() -> (getSensorValue() <= 220));
     }
 
     public Command runOuttake(double speed){
-        return RunMotors(speed, true);
+        return runMotors(speed, true);
     }
 
-    public Command RunMotors(double speed, boolean inverted){
+    public Command runMotors(double speed, boolean inverted){
         return runEnd(() -> {
             if(!inverted){
                 motor1.set(speed);
@@ -56,5 +64,10 @@ public class IntakeSubsystem extends SubsystemBase{
             motor1.set(0);
             motor2.set(0);
         });
+    }
+
+    public int getSensorValue() {
+        Measurement measurement = sensor.getMeasurement();
+        return measurement == null ? -1 : measurement.distance_mm;
     }
 }
