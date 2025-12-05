@@ -15,6 +15,8 @@ import com.ctre.phoenix6.swerve.SwerveRequest;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -23,13 +25,16 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.TestShooterSubsytem;
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.Setpoint;
+import frc.robot.subsystems.ElevatorSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
                                                                                       // max angular velocity
-    private TestShooterSubsytem shooterSubsystem = new TestShooterSubsytem();
+    private IntakeSubsystem Intake = new IntakeSubsystem();
+    private ElevatorSubsystem Elevator = new ElevatorSubsystem();
     private Pigeon2 gyro = new Pigeon2(20, "drivetrain");
 
     /* Setting up bindings for necessary control of the swerve drive platform */
@@ -121,7 +126,6 @@ public class RobotContainer {
         // point.withModuleDirection(new Rotation2d(-joystick.getLeftY(),
         // -joystick.getLeftX()))
         // ));
-        joystick.a().whileTrue(shooterSubsystem.runMotors(100));
 
         // Run SysId routines when holding back/start and X/Y.
         // Note that each routine should be run exactly once in a single log.
@@ -132,6 +136,16 @@ public class RobotContainer {
 
         // reset the field-centric heading on right bumper press
         joystick.rightBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
+
+        //Elevator Controls
+        joystick.povUp().onTrue(Elevator.targetPosition(Setpoint.kFeederStation));
+        joystick.povRight().onTrue(Elevator.targetPosition(Setpoint.kLevel2));
+        joystick.povDown().onTrue(Elevator.targetPosition(Setpoint.kLevel3));
+        joystick.povLeft().onTrue(Elevator.targetPosition(Setpoint.kLevel4));
+
+        //Intake Controls
+        joystick.leftTrigger().whileTrue(Intake.runIntake(Constants.Intake.INTAKE_SPEED.getValue()));
+        joystick.rightTrigger().whileTrue(Intake.runOuttake(Constants.Intake.OUTTAKE_SPEED.getValue()));
 
         drivetrain.registerTelemetry(logger::telemeterize);
     }
