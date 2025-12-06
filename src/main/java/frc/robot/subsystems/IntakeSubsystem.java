@@ -25,14 +25,14 @@ public class IntakeSubsystem extends SubsystemBase{
         motor2Config = new TalonFXConfiguration();
 
         motor1Config.CurrentLimits = new CurrentLimitsConfigs().withStatorCurrentLimit(4).withStatorCurrentLimitEnable(false);
-        motor1Config.Slot0.kP = Constants.PID.Intake.kP.getValue();
-        motor1Config.Slot0.kI = Constants.PID.Intake.kI.getValue();
-        motor1Config.Slot0.kD = Constants.PID.Intake.kD.getValue();
+        motor1Config.Slot0.kP = Constants.PIDs.Intake.kP.getValue();
+        motor1Config.Slot0.kI = Constants.PIDs.Intake.kI.getValue();
+        motor1Config.Slot0.kD = Constants.PIDs.Intake.kD.getValue();
 
         motor2Config.CurrentLimits = new CurrentLimitsConfigs().withStatorCurrentLimit(4).withStatorCurrentLimitEnable(false);
-        motor2Config.Slot0.kP = Constants.PID.Intake.kP.getValue();
-        motor2Config.Slot0.kI = Constants.PID.Intake.kI.getValue();
-        motor2Config.Slot0.kD = Constants.PID.Intake.kD.getValue();
+        motor2Config.Slot0.kP = Constants.PIDs.Intake.kP.getValue();
+        motor2Config.Slot0.kI = Constants.PIDs.Intake.kI.getValue();
+        motor2Config.Slot0.kD = Constants.PIDs.Intake.kD.getValue();
 
         motor1.getConfigurator().apply(motor1Config);
         motor2.getConfigurator().apply(motor2Config);
@@ -42,7 +42,7 @@ public class IntakeSubsystem extends SubsystemBase{
 
     public Command runIntake(double speed){
         SmartDashboard.putNumber("IntakeSensor", getSensorValue());
-        return runMotors(speed, false).until(() -> (getSensorValue() <= 220));
+        return runMotors(speed, false); // // .until(() -> (getSensorValue() <= 220));
     }
 
     public Command runOuttake(double speed){

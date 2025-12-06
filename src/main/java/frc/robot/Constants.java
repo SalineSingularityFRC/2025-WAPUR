@@ -2,6 +2,7 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.Preferences;
 import edu.wpi.first.wpilibj.RobotBase;
+import frc.robot.PID;
 
 public class Constants {
   public static final class Modes {
@@ -24,7 +25,14 @@ public class Constants {
     }
   }
 
-  public static class PID{
+  public static final class PIDGains {
+    public static final class PathPlanner {
+      public static final PID translation = new PID(3, 0, 0.011);
+      public static final PID rotation = new PID(3, 0, 0);
+    }
+  }
+
+  public static class PIDs{
     public static class Intake{
       public static final ConfigDouble kP = new ConfigDouble("Intake/kP", 1);
       public static final ConfigDouble kI = new ConfigDouble("Intake/kI", 0);

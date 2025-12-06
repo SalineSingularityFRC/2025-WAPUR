@@ -4,33 +4,42 @@
 
 package frc.robot;
 
-import static edu.wpi.first.units.Units.MetersPerSecond;
 import static edu.wpi.first.units.Units.RadiansPerSecond;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
+
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.hardware.Pigeon2;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.commands.PathPlannerAuto;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.config.RobotConfig;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.IntakeSubsystem;
-import frc.robot.subsystems.ElevatorSubsystem.Setpoint;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.Setpoint;
+import frc.robot.subsystems.IntakeSubsystem;
 
 public class RobotContainer {
-    private double MaxSpeed = 1.52; // TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts desired top speed
+    private double MaxSpeed = 1.52; // TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts
+                                    // desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(0.75).in(RadiansPerSecond); // 3/4 of a rotation per second
                                                                                       // max angular velocity
     private IntakeSubsystem intake = new IntakeSubsystem();
@@ -41,30 +50,71 @@ public class RobotContainer {
     private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
             .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.01) // Add a 1% deadband
             .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+    private final SwerveRequest.RobotCentric robotCentricDrive = new SwerveRequest.RobotCentric()
+            .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.01) // Add a 1% deadband
+            .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
     private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
     private final SwerveRequest.PointWheelsAt point = new SwerveRequest.PointWheelsAt();
-
-    private final Telemetry logger = new Telemetry(MaxSpeed);
 
     private final CommandXboxController joystick = new CommandXboxController(0);
 
     public final CommandSwerveDrivetrain drivetrain = TunerConstants.createDrivetrain();
-
+    private final Telemetry logger = new Telemetry(MaxSpeed);
+    private Supplier<Pose2d> poseSupplier = () -> (drivetrain.getState().Pose);
+    private Consumer<Pose2d> poseConsumer = pose -> {
+        drivetrain.resetPose(pose);
+    };
+    private Supplier<ChassisSpeeds> chassisSupplier = () -> (drivetrain.getState().Speeds);
+    private Consumer<ChassisSpeeds> chassisConsumer = speed -> {
+        drivetrain.setControl(
+                new SwerveRequest.ApplyRobotSpeeds().withSpeeds(speed)
+        );
+        SmartDashboard.putNumber("TestChassisSpeed/vx", speed.vxMetersPerSecond);
+        SmartDashboard.putNumber("TestChassisSpeed/vy", speed.vyMetersPerSecond);
+        SmartDashboard.putNumber("TestChassisSpeed/omega", speed.omegaRadiansPerSecond);
+    };
     private double rotationRate = -joystick.getRawAxis(1) * MaxAngularRate;
-    private PIDController rotationController = new PIDController(Constants.PID.Drive.HEADING_CORRECTION_KP,
-            Constants.PID.Drive.HEADING_CORRECTION_KI, Constants.PID.Drive.HEADING_CORRECTION_KD);
+    private PIDController rotationController = new PIDController(Constants.PIDs.Drive.HEADING_CORRECTION_KP,
+            Constants.PIDs.Drive.HEADING_CORRECTION_KI, Constants.PIDs.Drive.HEADING_CORRECTION_KD);
     private SimpleMotorFeedforward rotationFeedforward = new SimpleMotorFeedforward(
-            Constants.PID.Drive.HEADING_CORRECTION_KS, Constants.PID.Drive.HEADING_CORRECTION_KV);
+            Constants.PIDs.Drive.HEADING_CORRECTION_KS, Constants.PIDs.Drive.HEADING_CORRECTION_KV);
     private boolean isRotating = false;
     private double pastRobotAngle = 0;
     private double pastRobotAngleDerivative = 0;
     private double currentRobotAngleDerivative = 0;
+    private SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
         rotationController.setSetpoint(gyro.getYaw().getValueAsDouble());
-        rotationController.setTolerance(Constants.PID.Drive.HEADING_CORRECTION_TOLERANCE);
+        rotationController.setTolerance(Constants.PIDs.Drive.HEADING_CORRECTION_TOLERANCE);
         SmartDashboard.putNumber("MaxAngularRate", MaxAngularRate);
         configureBindings();
+
+        RobotConfig config = null;
+        try {
+            config = RobotConfig.fromGUISettings();
+        } catch (Exception e) {
+            // Handle exception as needed
+            e.printStackTrace();
+        }
+
+        AutoBuilder.configure(poseSupplier, poseConsumer, chassisSupplier, chassisConsumer,
+                new PPHolonomicDriveController( // HolonomicPathFollowerConfig, this should likely live in your
+                                                // Constants class
+                        new PIDConstants(Constants.PIDGains.PathPlanner.translation.P,
+                                Constants.PIDGains.PathPlanner.translation.I,
+                                Constants.PIDGains.PathPlanner.translation.D), // Translation PID constants
+                        new PIDConstants(Constants.PIDGains.PathPlanner.rotation.P,
+                                Constants.PIDGains.PathPlanner.rotation.I,
+                                Constants.PIDGains.PathPlanner.rotation.D) // Rotation PID constants
+                ), config,
+                () -> {
+                    var alliance = DriverStation.getAlliance();
+                    if (alliance.isPresent()) {
+                        return alliance.get() == DriverStation.Alliance.Red;
+                    }
+                    return false;
+                }, drivetrain);
     }
 
     public void updateRotation() {
@@ -80,8 +130,8 @@ public class RobotContainer {
         }
 
         boolean outDeadband = Math.abs(joystick.getRightX()) >= 0.015 * MaxAngularRate; // Reference:
-                                                                                          // -joystick.getRightX() < 0.1
-                                                                                          // * MaxAngularRate
+                                                                                        // -joystick.getRightX() < 0.1
+                                                                                        // * MaxAngularRate
         SmartDashboard.putBoolean("WithinDeadband", outDeadband);
         SmartDashboard.putNumber("RightX", joystick.getRightX());
         SmartDashboard.putNumber("GyroYaw", gyro.getYaw().getValueAsDouble());
@@ -137,7 +187,7 @@ public class RobotContainer {
         // reset the field-centric heading on right bumper press
         joystick.rightBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
 
-        //Elevator Controls
+        // Elevator Controls
         joystick.a().onTrue(elevator.moveToTargetPosition(Setpoint.kFeederStation));
         joystick.b().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel2));
         joystick.x().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel3));
@@ -145,7 +195,7 @@ public class RobotContainer {
         joystick.povUp().whileTrue(elevator.runMotors(false));
         joystick.povDown().whileTrue(elevator.runMotors(true));
 
-        //Intake Controls
+        // Intake Controls
         joystick.leftTrigger().whileTrue(intake.runIntake(Constants.Intake.INTAKE_SPEED.getValue()));
         joystick.rightTrigger().whileTrue(intake.runOuttake(Constants.Intake.OUTTAKE_SPEED.getValue()));
 
@@ -153,6 +203,6 @@ public class RobotContainer {
     }
 
     public Command getAutonomousCommand() {
-        return Commands.print("No autonomous command configured");
+        return new PathPlannerAuto("Forward");
     }
 }
