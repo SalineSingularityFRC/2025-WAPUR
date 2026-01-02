@@ -33,7 +33,7 @@ public class Robot extends LoggedRobot {
   @Override
   public void robotInit() {
     SignalLogger.enableAutoLogging(false);
-    Logger.recordMetadata("ProjectName", "2025-WAPUR");
+    Logger.recordMetadata("ProjectName", "2026-REBUILT");
 
     switch (Constants.Modes.currentMode) {
       case REAL: // on a real robot

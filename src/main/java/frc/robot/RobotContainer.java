@@ -25,7 +25,6 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -33,17 +32,12 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.ElevatorSubsystem;
-import frc.robot.subsystems.ElevatorSubsystem.Setpoint;
-import frc.robot.subsystems.IntakeSubsystem;
 
 public class RobotContainer {
     private double MaxSpeed = 1.52; // TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts
                                     // desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(1.3).in(RadiansPerSecond); // 3/4 of a rotation per second
                                                                                       // max angular velocity
-    private IntakeSubsystem intake = new IntakeSubsystem();
-    private ElevatorSubsystem elevator = new ElevatorSubsystem();
     private Pigeon2 gyro = new Pigeon2(20, "drivetrain");
 
     /* Setting up bindings for necessary control of the swerve drive platform */
@@ -82,7 +76,6 @@ public class RobotContainer {
     private double pastRobotAngle = 0;
     private double pastRobotAngleDerivative = 0;
     private double currentRobotAngleDerivative = 0;
-    private SendableChooser<Command> autoChooser;
 
     public RobotContainer() {
         rotationController.setSetpoint(gyro.getYaw().getValueAsDouble());
@@ -184,21 +177,8 @@ public class RobotContainer {
         joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
         joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));
 
-        // reset the field-centric heading on right bumper press
         joystick.rightBumper().onTrue(drivetrain.runOnce(() -> drivetrain.seedFieldCentric()));
-
-        // Elevator Controls
-        joystick.a().onTrue(elevator.moveToTargetPosition(Setpoint.kFeederStation));
-        joystick.b().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel2));
-        joystick.x().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel3));
-        joystick.y().onTrue(elevator.moveToTargetPosition(Setpoint.kLevel4));
-        joystick.povUp().whileTrue(elevator.runMotors(false));
-        joystick.povDown().whileTrue(elevator.runMotors(true));
-
-        // Intake Controls
-        joystick.leftTrigger().whileTrue(intake.runIntake(Constants.Intake.INTAKE_SPEED.getValue()));
-        joystick.rightTrigger().whileTrue(intake.runOuttake(Constants.Intake.OUTTAKE_SPEED.getValue()));
-
+        
         drivetrain.registerTelemetry(logger::telemeterize);
     }
 
