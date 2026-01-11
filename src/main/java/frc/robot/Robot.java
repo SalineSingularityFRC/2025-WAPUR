@@ -17,15 +17,12 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 
-import au.grapplerobotics.CanBridge;
-
 public class Robot extends LoggedRobot {
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
 
   public Robot() {
-    CanBridge.runTCP();
     DataLogManager.start();
     
   }
