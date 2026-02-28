@@ -32,11 +32,10 @@ import edu.wpi.first.wpilibj2.command.button.RobotModeTriggers;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
-import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.MotorSubsystem;
 
 public class RobotContainer {
-    private IntakeSubsystem intake = new IntakeSubsystem();
-
+    private MotorSubsystem motor = new MotorSubsystem();
     private double MaxSpeed = 1.52; // TunerConstants.kSpeedAt12Volts.in(MetersPerSecond); // kSpeedAt12Volts
                                     // desired top speed
     private double MaxAngularRate = RotationsPerSecond.of(1.3).in(RadiansPerSecond); // 3/4 of a rotation per second
@@ -184,8 +183,8 @@ public class RobotContainer {
         
         drivetrain.registerTelemetry(logger::telemeterize);
 
-        joystick.a().whileTrue(intake.runMotors(.9));
-        joystick.b().whileTrue(intake.runMotors(-.9));
+        joystick.leftTrigger().whileTrue(motor.runMotors(0.8));
+        joystick.leftTrigger().whileTrue(motor.runMotors(-0.8));
     }
 
     public Command getAutonomousCommand() {
