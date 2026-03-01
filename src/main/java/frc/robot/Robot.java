@@ -24,12 +24,13 @@ public class Robot extends LoggedRobot {
 
   public Robot() {
     DataLogManager.start();
+    
   }
 
   @Override
   public void robotInit() {
     SignalLogger.enableAutoLogging(false);
-    Logger.recordMetadata("ProjectName", "Generated Swerve");
+    Logger.recordMetadata("ProjectName", "2026-REBUILT");
 
     switch (Constants.Modes.currentMode) {
       case REAL: // on a real robot

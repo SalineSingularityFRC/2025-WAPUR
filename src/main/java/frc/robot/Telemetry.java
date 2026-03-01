@@ -36,6 +36,7 @@ public class Telemetry {
         for (int i = 0; i < 4; ++i) {
             SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }
+
     }
 
     /* What to publish over networktables for telemetry */
